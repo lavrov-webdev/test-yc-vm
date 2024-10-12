@@ -13,7 +13,7 @@ services:
             test: ["CMD-SHELL", "pg_isready", "-U", "usr"]
 
     back:
-        image: {{ env.BACK_IMAGE_URL }}
+        image: {{ env.BACKEND_IMAGE }}
         environment:
             - DATABASE_URL=postgresql://usr:pass@postgres:5432/main
             - PORT=3000
@@ -24,7 +24,7 @@ services:
             - 3000:3000
 
     front:
-        image: {{ env.FRONT_IMAGE_URL }}
+        image: {{ env.FRONTEND_IMAGE }}
         depends_on:
             - back
         ports:
