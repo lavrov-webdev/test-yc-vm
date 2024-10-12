@@ -28,7 +28,7 @@ function App() {
 
   return (
     <>
-      <h1>How are you?</h1>
+      <h1>How are you??</h1>
       <ul>
         {todos.map(t => <div key={t.id}>
           {t.text}:&nbsp;{t.status}
