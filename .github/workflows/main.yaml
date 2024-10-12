@@ -1,7 +1,3 @@
-env:
-  FRONTEND_IMAGE: cr.yandex/crptl09tf76l8vl7jp39/client:${{ github.sha }}
-  BACKEND_IMAGE: cr.yandex/crptl09tf76l8vl7jp39/server:${{ github.sha }}
-
 name: Push To Yandex Cloud CR
 
 # Controls when the action will run. 
@@ -13,6 +9,10 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+env:
+  FRONTEND_IMAGE: cr.yandex/crptl09tf76l8vl7jp39/client:${{ github.sha }}
+  BACKEND_IMAGE: cr.yandex/crptl09tf76l8vl7jp39/server:${{ github.sha }}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -35,8 +35,8 @@ jobs:
 
       - name: Build, tag, and push image of backend to Yandex Cloud Container Registry
         run: |
-          docker build -t $BACKEND_IMAGE server
-          docker push $BACKEND_IMAGE
+          docker build -t ${{ env.BACKEND_IMAGE }} server
+          docker push ${{ env.BACKEND_IMAGE }}
   build-frontend:
     runs-on: ubuntu-latest
     steps:
@@ -49,8 +49,8 @@ jobs:
 
       - name: Build, tag, and push image of client to Yandex Cloud Container Registry
         run: |
-          docker build -t $FRONTEND_IMAGE client
-          docker push $FRONTEND_IMAGE
+          docker build -t ${{ env.FRONTEND_IMAGE }} client
+          docker push ${{ env.FRONTEND_IMAGE }}
   deploy:
     needs:
       - build-backend
@@ -63,8 +63,8 @@ jobs:
         id: deploy-coi
         uses: yc-actions/yc-coi-deploy@v2
         env:
-          BACKEND_IMAGE_URL: $BACKEND_IMAGE
-          FRONTEND_IMAGE_URL: $FRONTEND_IMAGE
+          BACKEND_IMAGE_URL: ${{ env.BACKEND_IMAGE }}
+          FRONTEND_IMAGE_URL: ${{ env.FRONTEND_IMAGE }}
           SSH_KEY: ${{ secrets.SSH_KEY }}
         with:
           yc-sa-json-credentials: ${{ secrets.YC_VM_ADMIN_JSON_CREDENTIALS }}
