@@ -17,6 +17,7 @@ services:
         environment:
             - DATABASE_URL=postgresql://usr:pass@postgres:5432/main
             - PORT=3000
+        restart: always
         depends_on:
             postgres:
                 condition: service_healthy
@@ -25,6 +26,7 @@ services:
 
     front:
         image: {{ env.FRONTEND_IMAGE }}
+        restart: always
         depends_on:
             - back
         ports:
