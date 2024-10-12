@@ -1,0 +1,82 @@
+env:
+  FRONTEND_IMAGE: cr.yandex/crptl09tf76l8vl7jp39/client:${{ github.sha }}
+  BACKEND_IMAGE: cr.yandex/crptl09tf76l8vl7jp39/server:${{ github.sha }}
+
+name: Push To Yandex Cloud CR
+
+# Controls when the action will run. 
+on:
+  push:
+    branches: [ main ]
+  release:
+    types: [created]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains two jobs called "build" and "deploy"
+  build-backend:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Yandex Cloud CR "Login" Action for GitHub Actions
+        uses: yc-actions/yc-cr-login@v2
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_IMAGES_PUSHER_JSON_CREDENTIALS }}
+
+
+      - name: Build, tag, and push image of backend to Yandex Cloud Container Registry
+        run: |
+          docker build -t $BACKEND_IMAGE server
+          docker push $BACKEND_IMAGE
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Yandex Cloud CR "Login" Action for GitHub Actions
+        uses: yc-actions/yc-cr-login@v2
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_IMAGES_PUSHER_JSON_CREDENTIALS }}
+
+
+      - name: Build, tag, and push image of client to Yandex Cloud Container Registry
+        run: |
+          docker build -t $FRONTEND_IMAGE client
+          docker push $FRONTEND_IMAGE
+  deploy:
+    needs:
+      - build-backend
+      - build-frontend
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Deploy COI VM
+        id: deploy-coi
+        uses: yc-actions/yc-coi-deploy@v2
+        env:
+          BACKEND_IMAGE_URL: $BACKEND_IMAGE
+          FRONTEND_IMAGE_URL: $FRONTEND_IMAGE
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_VM_ADMIN_JSON_CREDENTIALS }}
+          folder-id: b1gq1dhshocbcbf2s936
+          vm-name: test-docker-compose
+          vm-service-account-id: ajevtckf2gg3qv308c1k
+          vm-cores: 2
+          vm-memory: 2 GB
+          vm-core-fraction: 100
+          vm-zone-id: ru-central1-b
+          vm-subnet-id: e2ll05holjpvabjhskgb
+          vm-disk-type: network-hdd
+          vm-disk-size: 15GB
+          user-data-path: './user-data.yaml'
+          docker-compose-path: './docker-compose.yaml'
