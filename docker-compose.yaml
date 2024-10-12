@@ -1,0 +1,37 @@
+version: '3.0'
+services:
+    postgres:
+        image: postgres:14
+        environment:
+            - POSTGRES_DB=main
+            - POSTGRES_USER=usr
+            - POSTGRES_PASSWORD=pass
+        volumes:
+            - main_vol:/var/lib/postgresql/data:rw
+        restart: always
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready", "-U", "usr"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    back:
+        build: ./server
+        environment:
+            - DATABASE_URL=postgresql://usr:pass@postgres:5432/main
+            - PORT=3000
+        depends_on:
+            postgres:
+                condition: service_healthy
+        ports:
+            - 3000:3000
+
+    front:
+        build: ./client
+        depends_on:
+            - back
+        ports:
+            - 80:80
+
+volumes:
+    main_vol:
